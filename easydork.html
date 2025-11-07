@@ -1,0 +1,572 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master OSINT Dorks Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #0f0f0f 50%, #1a0033 100%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            padding: 15px;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 3px solid #00d4ff;
+            margin-bottom: 25px;
+        }
+        .header h1 {
+            font-size: 2.2em;
+            background: linear-gradient(120deg, #1abc9c, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        .input-section {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .input-section input {
+            padding: 12px 15px;
+            border: 2px solid #1abc9c;
+            background: #1a1a1a;
+            color: #00d4ff;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 700px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+        }
+        .input-section input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            border-color: #00ff00;
+        }
+        .input-section button {
+            padding: 12px 25px;
+            background: linear-gradient(120deg, #1abc9c, #00d4ff);
+            color: #0f0f0f;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+        .input-section button:hover {
+            transform: scale(1.05);
+        }
+        .target-display {
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: #1a1a1a;
+            border: 2px solid #1abc9c;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .target-display .label {
+            color: #1abc9c;
+            font-weight: bold;
+        }
+        .target-display .domain {
+            color: #00ff00;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .stat { text-align: center; }
+        .stat-num { font-size: 1.8em; color: #00d4ff; font-weight: bold; }
+        .stat-label { color: #bdc3c7; font-size: 0.9em; }
+        .filter-bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-bar input {
+            padding: 8px 12px;
+            border: 1px solid #1abc9c;
+            background: #1a1a1a;
+            color: #00d4ff;
+            border-radius: 4px;
+            max-width: 400px;
+        }
+        .filter-bar button {
+            padding: 8px 15px;
+            background: #3a3a3a;
+            color: #fff;
+            border: 1px solid #1abc9c;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .filter-bar button:hover {
+            background: #1abc9c;
+            color: #0f0f0f;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 15px;
+            max-width: 1900px;
+            margin: 0 auto;
+        }
+        .card {
+            background: linear-gradient(135deg, #1a1a1a, #242424);
+            border: 2px solid #1abc9c;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .card:hover {
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+            transform: translateY(-3px);
+        }
+        .card.active {
+            border-color: #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+            background: linear-gradient(135deg, #1a2a1a, #242a24);
+        }
+        .card-title {
+            font-size: 1.15em;
+            color: #00d4ff;
+            font-weight: bold;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #1abc9c;
+            padding-bottom: 8px;
+        }
+        .card-meta {
+            font-size: 0.8em;
+            color: #1abc9c;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .card-desc {
+            font-size: 0.85em;
+            color: #bdc3c7;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .dork-examples {
+            background: #0f0f0f;
+            border-left: 3px solid #00d4ff;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 3px;
+            font-size: 0.75em;
+            color: #00ff00;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .dork-example-item {
+            padding: 3px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-launch {
+            background: linear-gradient(120deg, #1abc9c, #00d4ff);
+            color: #0f0f0f;
+        }
+        .btn-launch:hover {
+            transform: scale(1.05);
+        }
+        .btn-launch:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-active {
+            background: #3a3a3a;
+            color: #fff;
+            border: 1px solid #555;
+        }
+        .card.active .btn-active {
+            background: #00ff00;
+            color: #0f0f0f;
+        }
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 50px;
+            color: #bdc3c7;
+        }
+        .info-banner {
+            background: #1a2a2a;
+            border: 1px solid #1abc9c;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #bdc3c7;
+            font-size: 0.9em;
+        }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🔍 MASTER OSINT DORKS DASHBOARD</h1>
+    <p>Enter Domain → Select Dork → Auto-Launch Search</p>
+</div>
+
+<div class="input-section">
+    <input type="text" id="domain" placeholder="Enter target domain (e.g., example.com, github.com, gov.uk)">
+    <button onclick="clearDomain()">Clear</button>
+</div>
+
+<div class="target-display" id="targetDisplay" style="display:none;">
+    <div class="label">📍 Target Domain:</div>
+    <div class="domain" id="targetDomain"></div>
+</div>
+
+<div class="info-banner">
+    💡 Enter a domain above, then click any dork box to instantly search that domain with that technique
+</div>
+
+<div class="stats">
+    <div class="stat"><div class="stat-num" id="total">0</div><div class="stat-label">Total Dorks</div></div>
+    <div class="stat"><div class="stat-num" id="engines">0</div><div class="stat-label">Search Engines</div></div>
+    <div class="stat"><div class="stat-num" id="active">0</div><div class="stat-label">Active Marked</div></div>
+</div>
+
+<div class="filter-bar">
+    <input type="text" id="filter" placeholder="Filter by name, engine, or category...">
+    <button onclick="clearFilter()">Reset Filter</button>
+</div>
+
+<div class="container" id="container"></div>
+
+<script>
+const dorkLibrary = [
+    // Basic Search Operators
+    { title: "site:", engine: "Google", cat: "Domain", desc: "Restrict search to specific domain/TLD", template: "site:{domain}" },
+    { title: "inurl:", engine: "Google", cat: "URL", desc: "Find pages with pattern in URL", template: "site:{domain} inurl:admin" },
+    { title: "intitle:", engine: "Google", cat: "Title", desc: "Find pages with text in title", template: "site:{domain} intitle:index" },
+    { title: "intext:", engine: "Google", cat: "Content", desc: "Find pages containing specific text", template: "site:{domain} intext:password" },
+    { title: "filetype:", engine: "Google", cat: "Files", desc: "Search for specific file types", template: "site:{domain} filetype:pdf" },
+    { title: "cache:", engine: "Google", cat: "Cache", desc: "View Google cached version", template: "cache:{domain}" },
+    { title: "allintitle:", engine: "Google", cat: "Title", desc: "All words must be in title", template: "site:{domain} allintitle:admin panel" },
+    { title: "allinurl:", engine: "Google", cat: "URL", desc: "All words must be in URL", template: "site:{domain} allinurl:admin backup" },
+    { title: "allintext:", engine: "Google", cat: "Content", desc: "All words must be in content", template: "site:{domain} allintext:confidential information" },
+    { title: "ext:", engine: "Google", cat: "Files", desc: "Search specific extensions", template: "site:{domain} ext:sql" },
+    { title: "info:", engine: "Google", cat: "Info", desc: "Get domain information", template: "info:{domain}" },
+    { title: "link:", engine: "Google", cat: "Links", desc: "Find pages linking to domain", template: "link:{domain}" },
+    { title: "related:", engine: "Google", cat: "Similar", desc: "Find similar/related sites", template: "related:{domain}" },
+    
+    // SQL Injection Vulnerabilities 
+    { title: "SQLi - PHP Pages", engine: "Google", cat: "SQLi", desc: "Find PHP pages with ID parameters prone to SQL injection", template: "site:{domain} inurl:.php?id=" },
+    { title: "SQLi - ASP Pages", engine: "Google", cat: "SQLi", desc: "Find ASP pages with ID parameters", template: "site:{domain} inurl:.asp?id=" },
+    { title: "SQLi - Product Pages", engine: "Google", cat: "SQLi", desc: "Find product pages with ID parameters", template: "site:{domain} inurl:product.php?id=" },
+    { title: "SQLi - Error Detection", engine: "Google", cat: "SQLi", desc: "Find SQL syntax errors exposing database info", template: "site:{domain} \"You have an error in your SQL syntax\"" },
+    { title: "SQLi - MySQL Errors", engine: "Google", cat: "SQLi", desc: "Find MySQL function errors", template: "site:{domain} \"Warning: mysql_fetch_array()\"" },
+    { title: "SQLi - Oracle Errors", engine: "Google", cat: "SQLi", desc: "Find Oracle database errors", template: "site:{domain} \"ORA-00933: SQL command not properly ended\"" },
+    { title: "SQLi - Category Pages", engine: "Google", cat: "SQLi", desc: "Find category pages with parameters", template: "site:{domain} inurl:.php?cat=" },
+    { title: "SQLi - Search Pages", engine: "Google", cat: "SQLi", desc: "Find search pages with query parameters", template: "site:{domain} inurl:search.php?q=" },
+    { title: "SQLi - View Pages", engine: "Google", cat: "SQLi", desc: "Find view pages with ID parameters", template: "site:{domain} inurl:view.php?id=" },
+
+    // Exposed Databases & Backups 
+    { title: "DB - SQL Backups", engine: "Google", cat: "Database", desc: "Find SQL database backup files", template: "site:{domain} filetype:sql \"sql backup\"" },
+    { title: "DB - phpMyAdmin", engine: "Google", cat: "Database", desc: "Find phpMyAdmin installations with errors", template: "site:{domain} \"phpMyAdmin\" \"error\" \"db\"" },
+    { title: "DB - Database Dumps", engine: "Google", cat: "Database", desc: "Find SQL dump files", template: "site:{domain} filetype:sql inurl:dump" },
+    { title: "DB - Environment Files", engine: "Google", cat: "Database", desc: "Find .env files with database credentials", template: "site:{domain} filetype:env \"DB_PASSWORD\"" },
+    { title: "DB - Exposed phpMyAdmin", engine: "Google", cat: "Database", desc: "Find running phpMyAdmin instances", template: "site:{domain} intext:\"phpMyAdmin\" \"running on\" inurl:\"main.php\"" },
+    { title: "DB - MongoDB Instances", engine: "Google", cat: "Database", desc: "Find exposed MongoDB databases", template: "site:{domain} intitle:\"mongodb status\" intext:\"topologyVersion\"" },
+
+    // XSS Vulnerable Parameters 
+    { title: "XSS - Search Parameters", engine: "Google", cat: "XSS", desc: "Find search parameters prone to XSS", template: "site:{domain} inurl:q= | inurl:s= | inurl:search= | inurl:query=" },
+    { title: "XSS - Keyword Parameters", engine: "Google", cat: "XSS", desc: "Find keyword parameters for XSS testing", template: "site:{domain} inurl:keyword= | inurl:lang=" },
+
+    // Authentication & Login Pages 
+    { title: "Auth - Login Pages", engine: "Google", cat: "Authentication", desc: "Find login pages", template: "site:{domain} inurl:login.php" },
+    { title: "Auth - Admin Logins", engine: "Google", cat: "Authentication", desc: "Find admin login portals", template: "site:{domain} inurl:admin/login.php" },
+    { title: "Auth - Vulnerable Logins", engine: "Google", cat: "Authentication", desc: "Find login pages with username/password fields", template: "site:{domain} inurl:\"/login.php\" OR inurl:\"/admin.php\" intitle:\"login\" OR intitle:\"admin\" intext:\"username\" AND intext:\"password\"" },
+    { title: "Auth - WordPress Logins", engine: "Google", cat: "Authentication", desc: "Find WordPress login pages", template: "site:{domain} inurl:wp-login" },
+    { title: "Auth - Drupal Logins", engine: "Google", cat: "Authentication", desc: "Find Drupal login pages", template: "site:{domain} inurl:\"/user/login\" \"Powered by Drupal\"" },
+
+    // Sensitive Files & Directories 
+    { title: "Files - Exposed Directories", engine: "Google", cat: "Files", desc: "Find open directory listings", template: "site:{domain} intitle:\"Index of\" -inurl:(jsp|pl|php|html|aspx|htm|cf|shtml)" },
+    { title: "Files - Password Files", engine: "Google", cat: "Files", desc: "Find password files in directories", template: "site:{domain} intitle:\"Index of\" password.txt" },
+    { title: "Files - Config Files", engine: "Google", cat: "Files", desc: "Find configuration files", template: "site:{domain} intitle:\"index of\" config.yml" },
+    { title: "Files - Backup Files", engine: "Google", cat: "Files", desc: "Find backup files in directories", template: "site:{domain} intitle:\"index of\" /backup" },
+    { title: "Files - SSH Keys", engine: "Google", cat: "Files", desc: "Find exposed SSH keys", template: "site:{domain} intitle:\"index of\" (\"id_rsa.pub\" OR \"id_dsa.pub\" OR \"authorized_keys\")" },
+    { title: "Files - Git Repos", engine: "Google", cat: "Files", desc: "Find exposed Git repositories", template: "site:{domain} intitle:index of .git" },
+    { title: "Files - Database Backups", engine: "Google", cat: "Files", desc: "Find SQL database backups", template: "site:{domain} intitle:\"index of\" (\"backup.sql\" OR \"dump.sql\" OR \"database_backup.sql\")" },
+    { title: "Files - Log Files", engine: "Google", cat: "Files", desc: "Find exposed log files", template: "site:{domain} intitle:\"index of\" error.log" },
+    { title: "Files - Source Code", engine: "Google", cat: "Files", desc: "Find exposed source code", template: "site:{domain} intitle:\"index of\" (\"source code\" OR \"src.zip\" OR \"codebase\")" },
+
+    // WordPress Vulnerabilities 
+    { title: "WP - Plugins", engine: "Google", cat: "WordPress", desc: "Find WordPress plugin directories", template: "site:{domain} inurl:wp-content/plugins/" },
+    { title: "WP - Vulnerable Plugins", engine: "Google", cat: "WordPress", desc: "Find Revolution Slider vulnerable plugin", template: "site:{domain} inurl:/wp-content/plugins/revslider/" },
+    { title: "WP - Admin Directories", engine: "Google", cat: "WordPress", desc: "Find WordPress admin directories", template: "site:{domain} inurl:/wp-admin" },
+
+    // IoT & Network Devices 
+    { title: "IoT - Network Cameras", engine: "Google", cat: "IoT", desc: "Find network camera feeds", template: "site:{domain} inurl:\"/view.shtml\"" },
+    { title: "IoT - WebcamXP", engine: "Google", cat: "IoT", desc: "Find WebcamXP camera systems", template: "site:{domain} intitle:\"webcamXP 5\"" },
+    { title: "IoT - IP Cameras", engine: "Google", cat: "IoT", desc: "Find IP camera live feeds", template: "site:{domain} intitle:\"network camera\" OR intitle:\"IP camera\" OR intitle:\"live feed\"" },
+    { title: "IoT - Camera Feeds", engine: "Google", cat: "IoT", desc: "Find camera viewer frames", template: "site:{domain} inurl:\"viewerframe?mode=motion\"" },
+    { title: "IoT - Open Network Devices", engine: "Google", cat: "IoT", desc: "Find open network devices", template: "site:{domain} intitle:\"open network devices\"" },
+    { title: "IoT - Network Configs", engine: "Google", cat: "IoT", desc: "Find network device configurations", template: "site:{domain} intitle:\"index of\" (\"router.conf\" OR \"switch.conf\" OR \"firewall.conf\")" },
+    { title: "IoT - Device Configs", engine: "Google", cat: "IoT", desc: "Find IoT device configurations", template: "site:{domain} inurl:\"/device.rsp\" OR inurl:\"/config.xml\" OR inurl:\"/status.xml\"" },
+    { title: "IoT - Apache Tomcat", engine: "Google", cat: "IoT", desc: "Find Apache Tomcat installations", template: "site:{domain} intitle:\"Apache Tomcat\" intext:\"If you're seeing this, you've successfully installed Tomcat\"" },
+    { title: "IoT - Jenkins", engine: "Google", cat: "IoT", desc: "Find exposed Jenkins instances", template: "site:{domain} intitle:\"Dashboard [Jenkins]\"" },
+
+    // Cloud Services & Storage 
+    { title: "Cloud - AWS S3 Buckets", engine: "Google", cat: "Cloud", desc: "Find AWS S3 buckets", template: "site:s3.amazonaws.com {domain}" },
+    { title: "Cloud - Misconfigured S3", engine: "Google", cat: "Cloud", desc: "Find open Amazon S3 buckets", template: "site:s3.amazonaws.com intitle:\"index of\" (\"bucket\" OR \"files\" OR \"public\")" },
+    { title: "Cloud - Google Drive", engine: "Google", cat: "Cloud", desc: "Find sensitive Google Drive files", template: "site:drive.google.com {domain} confidential" },
+    { title: "Cloud - Firebase", engine: "Google", cat: "Cloud", desc: "Find exposed Firebase databases", template: "site:{domain} intitle:\"Firebase Console - Projects\"" },
+    { title: "Cloud - GitLab", engine: "Google", cat: "Cloud", desc: "Find exposed GitLab repositories", template: "site:{domain} intitle:\"GitLab\"" },
+
+    // Sensitive Information & Documents 
+    { title: "OSINT - Email Lists", engine: "Google", cat: "OSINT", desc: "Find email lists in text files", template: "site:{domain} filetype:txt @gmail.com OR @yahoo.com OR @hotmail.com" },
+    { title: "OSINT - Confidential PDFs", engine: "Google", cat: "OSINT", desc: "Find confidential PDF documents", template: "site:{domain} filetype:pdf \"Confidential\"" },
+    { title: "OSINT - Government Docs", engine: "Google", cat: "OSINT", desc: "Find sensitive government documents", template: "site:.gov filetype:pdf OR filetype:xls OR filetype:doc intitle:\"confidential\" OR intitle:\"sensitive\"" },
+    { title: "OSINT - Financial Records", engine: "Google", cat: "OSINT", desc: "Find financial spreadsheets", template: "site:{domain} intext:\"balance sheet\" OR intext:\"financial statement\" filetype:xls OR filetype:xlsx" },
+    { title: "OSINT - HR Documents", engine: "Google", cat: "OSINT", desc: "Find HR and recruitment files", template: "site:{domain} intitle:\"HR\" OR intitle:\"recruitment\" intext:\"resume\" OR intext:\"CV\" filetype:pdf OR filetype:docx" },
+    { title: "OSINT - Personal Data", engine: "Google", cat: "OSINT", desc: "Find personal identification numbers", template: "site:{domain} intext:\"SSN\" OR intext:\"Social Security Number\" filetype:pdf OR filetype:xls" },
+    { title: "OSINT - Network Diagrams", engine: "Google", cat: "OSINT", desc: "Find internal network diagrams", template: "site:{domain} intext:\"network diagram\" OR intext:\"network topology\" filetype:pdf OR filetype:png OR filetype:jpg" },
+    { title: "OSINT - API Keys", engine: "Google", cat: "OSINT", desc: "Find exposed API keys in files", template: "site:{domain} filetype:env intext:API_KEY" },
+    { title: "OSINT - Employee Credentials", engine: "Google", cat: "OSINT", desc: "Find employee login details", template: "site:{domain} intext:\"employee credentials\" OR intext:\"staff passwords\" filetype:pdf OR filetype:doc" },
+
+    // Server & Technology Identification 
+    { title: "Tech - Windows Servers", engine: "Google", cat: "Technology", desc: "Find Windows server welcome pages", template: "site:{domain} intitle:\"Welcome to Windows 2000 Internet Services\"" },
+    { title: "Tech - Apache Test", engine: "Google", cat: "Technology", desc: "Find Apache test pages", template: "site:{domain} intitle:\"Test Page for the Apache Web Server\"" },
+    { title: "Tech - NGINX Test", engine: "Google", cat: "Technology", desc: "Find NGINX test pages", template: "site:{domain} intitle:\"Test Page for the Nginx HTTP Server\"" },
+    { title: "Tech - Joomla Sites", engine: "Google", cat: "Technology", desc: "Find Joomla installations", template: "site:{domain} inurl:/index.php?option=com_joomla" },
+    { title: "Tech - Magento Admin", engine: "Google", cat: "Technology", desc: "Find Magento admin pages", template: "site:{domain} inurl:/index.php/admin" },
+    { title: "Tech - OpenCart Admin", engine: "Google", cat: "Technology", desc: "Find OpenCart admin config", template: "site:{domain} inurl:/admin/config.php" },
+    { title: "Tech - Elasticsearch", engine: "Google", cat: "Technology", desc: "Find Elasticsearch/Kibana instances", template: "site:{domain} intitle:\"Kibana\" intext:\"Welcome to Elastic\"" },
+
+    // Remote Access & Services 
+    { title: "Remote - FTP Servers", engine: "Google", cat: "Remote", desc: "Find open FTP servers", template: "site:{domain} intitle:\"index of\" inurl:ftp" },
+    { title: "Remote - RDP Servers", engine: "Google", cat: "Remote", desc: "Find Remote Desktop Web Connection", template: "site:{domain} intitle:\"Remote Desktop Web Connection\"" },
+
+    // Error Messages & Debug Info 
+    { title: "Errors - PHP Info", engine: "Google", cat: "Errors", desc: "Find PHP information files", template: "site:{domain} filetype:php inurl:info" },
+    { title: "Errors - Server Errors", engine: "Google", cat: "Errors", desc: "Find various server error messages", template: "site:{domain} intext:\"Error 404: Not Found\"" },
+
+    // Other Search Engines
+    { title: "Shodan - Port", engine: "Shodan", cat: "IoT", desc: "Search by port number", template: "port:3306 hostname:{domain}" },
+    { title: "Shodan - Product", engine: "Shodan", cat: "IoT", desc: "Search by product type", template: "hostname:{domain} product:Apache" },
+    { title: "Shodan - Country", engine: "Shodan", cat: "IoT", desc: "Geo-filtered search", template: "hostname:{domain} country:US" },
+    { title: "Shodan - HTTP", engine: "Shodan", cat: "IoT", desc: "Find HTTP headers", template: "hostname:{domain} http.status:200" },
+    { title: "Shodan - SSL", engine: "Shodan", cat: "IoT", desc: "Find SSL certificates", template: "ssl.cert.subject:{domain}" },
+    
+    { title: "GitHub - Filename", engine: "GitHub", cat: "Code", desc: "Search by filename", template: "filename:config.json {domain}" },
+    { title: "GitHub - Language", engine: "GitHub", cat: "Code", desc: "Search specific language", template: "language:python {domain}" },
+    { title: "GitHub - Org", engine: "GitHub", cat: "Code", desc: "Search org repositories", template: "org:{domain}" },
+    { title: "GitHub - Secrets", engine: "GitHub", cat: "Code", desc: "Find leaked secrets", template: "{domain} (password OR apikey OR secret)" },
+    
+    { title: "Censys - Certificate", engine: "Censys", cat: "Certs", desc: "Search SSL certificates", template: "parsed.subject.organization:{domain}" },
+    { title: "Censys - Services", engine: "Censys", cat: "Services", desc: "Find open services", template: "services.http.request.uri.path:/admin" },
+    
+    { title: "LinkedIn X-Ray", engine: "LinkedIn", cat: "People", desc: "Find company employees", template: "site:linkedin.com {domain} employee" },
+    
+    { title: "Netlas Query", engine: "Netlas", cat: "IP", desc: "Search Netlas", template: "domain:{domain}" },
+    { title: "Binary Edge", engine: "Binary Edge", cat: "Banners", desc: "Search service banners", template: "domain:{domain}" },
+    
+    { title: ".Onion Search", engine: "DuckDuckGo", cat: "Dark Web", desc: "Search Tor sites", template: "site:.onion {domain}" },
+];
+
+let currentDomain = '';
+let activeSet = new Set();
+
+// Initialize event listeners when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Domain input event listener
+    document.getElementById('domain').addEventListener('input', handleDomainInput);
+    
+    // Filter input event listener  
+    document.getElementById('filter').addEventListener('input', filterDorks);
+    
+    // Initial render
+    renderDorks(dorkLibrary);
+});
+
+function handleDomainInput() {
+    currentDomain = document.getElementById('domain').value.trim();
+    const display = document.getElementById('targetDisplay');
+    
+    if (currentDomain) {
+        document.getElementById('targetDomain').textContent = currentDomain;
+        display.style.display = 'block';
+        // Enable all search buttons
+        document.querySelectorAll('.btn-launch').forEach(btn => {
+            btn.disabled = false;
+        });
+    } else {
+        display.style.display = 'none';
+        // Disable all search buttons
+        document.querySelectorAll('.btn-launch').forEach(btn => {
+            btn.disabled = true;
+        });
+    }
+}
+
+function clearDomain() {
+    document.getElementById('domain').value = '';
+    currentDomain = '';
+    document.getElementById('targetDisplay').style.display = 'none';
+    // Disable all search buttons
+    document.querySelectorAll('.btn-launch').forEach(btn => {
+        btn.disabled = true;
+    });
+}
+
+function renderDorks(data) {
+    const container = document.getElementById('container');
+    container.innerHTML = '';
+    
+    if (data.length === 0) {
+        container.innerHTML = '<div class="no-results">No dorks match your search</div>';
+        return;
+    }
+    
+    data.forEach((d, i) => {
+        const card = document.createElement('div');
+        card.className = `card ${activeSet.has(i) ? 'active' : ''}`;
+        card.id = `card-${i}`;
+        
+        // Add click handler to the entire card
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking the buttons
+            if (!e.target.classList.contains('btn')) {
+                launchSearch(i);
+            }
+        });
+        
+        card.innerHTML = `
+            <div class="card-title">${d.title}</div>
+            <div class="card-meta">
+                <span>🔧 ${d.engine}</span>
+                <span>${d.cat}</span>
+            </div>
+            <div class="card-desc">${d.desc}</div>
+            <div class="dork-examples">
+                <div class="dork-example-item">Template: <strong>${d.template}</strong></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-launch" ${!currentDomain ? 'disabled' : ''}>
+                    🚀 Search
+                </button>
+                <button class="btn btn-active">Mark</button>
+            </div>
+        `;
+        
+        // Add event listeners to buttons
+        const searchBtn = card.querySelector('.btn-launch');
+        const markBtn = card.querySelector('.btn-active');
+        
+        searchBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            launchSearch(i);
+        });
+        
+        markBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleActive(i);
+        });
+        
+        container.appendChild(card);
+    });
+    
+    document.getElementById('total').textContent = dorkLibrary.length;
+    document.getElementById('engines').textContent = new Set(dorkLibrary.map(d => d.engine)).size;
+    document.getElementById('active').textContent = activeSet.size;
+}
+
+function filterDorks() {
+    const q = document.getElementById('filter').value.toLowerCase();
+    if (!q) {
+        renderDorks(dorkLibrary);
+        return;
+    }
+    
+    const filtered = dorkLibrary.filter(d =>
+        `${d.title} ${d.engine} ${d.cat} ${d.desc} ${d.template}`.toLowerCase().includes(q)
+    );
+    renderDorks(filtered);
+}
+
+function clearFilter() {
+    document.getElementById('filter').value = '';
+    renderDorks(dorkLibrary);
+}
+
+function launchSearch(idx) {
+    // Get current domain value directly from input to ensure it's fresh
+    const domainInput = document.getElementById('domain').value.trim();
+    
+    if (!domainInput) {
+        alert('Please enter a domain first!');
+        return;
+    }
+    
+    const d = dorkLibrary[idx];
+    const query = d.template.replace(/{domain}/g, domainInput);
+    const encodedQuery = encodeURIComponent(query);
+    
+    const urls = {
+        'Google': `https://www.google.com/search?q=${encodedQuery}`,
+        'Shodan': `https://www.shodan.io/search?query=${encodedQuery}`,
+        'GitHub': `https://github.com/search?q=${encodedQuery}`,
+        'Censys': `https://search.censys.io/search?q=${encodedQuery}`,
+        'Netlas': `https://app.netlas.io/search/?q=${encodedQuery}`,
+        'DuckDuckGo': `https://duckduckgo.com/?q=${encodedQuery}`,
+        'LinkedIn': `https://www.linkedin.com/search/results/?keywords=${encodedQuery}`,
+        'Binary Edge': `https://app.binaryedge.io/services/query?q=${encodedQuery}`
+    };
+    
+    // Open in new tab
+    const searchUrl = urls[d.engine] || urls['Google'];
+    window.open(searchUrl, '_blank');
+}
+
+function toggleActive(idx) {
+    if (activeSet.has(idx)) {
+        activeSet.delete(idx);
+    } else {
+        activeSet.add(idx);
+    }
+    renderDorks(dorkLibrary);
+}
+</script>
+
+</body>
+</html>
