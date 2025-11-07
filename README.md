@@ -42,7 +42,7 @@ A comprehensive, next-generation OSINT (Open Source Intelligence) dorking tool t
 
 ### Method 2: Clone Repository
 ```bash
-git clone https://github.com/xl337x/easydork
+git clone https://github.com/xl337x/easydork.git
 cd easydork
 open index.html
 ```
