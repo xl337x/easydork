@@ -44,7 +44,7 @@ A comprehensive, next-generation OSINT (Open Source Intelligence) dorking tool t
 ```bash
 git clone https://github.com/xl337x/easydork.git
 cd easydork
-open index.html
+firefox easydork.html
 ```
 
 ### Method 3: Deploy to Web Server
